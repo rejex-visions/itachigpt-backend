@@ -11,9 +11,12 @@ CORS(app)  # Adjust CORS settings as needed
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-from flask import Flask, jsonify, request
+# Initialize the model
+model = genai.GenerativeModel('gemini-2.0-flash-exp')  # Replace with actual model name if different
 
-app = Flask(__name__)
+@app.route('/test', methods=['GET'])
+def test():
+    return "Server is alive!"
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -23,7 +26,6 @@ def chat():
             return jsonify({'response': 'No message provided!'}), 400
         
         user_message = data['message']
-        # Assume this is your model generating a response
         response = model.generate_content(user_message)
         
         # Determine the response type
