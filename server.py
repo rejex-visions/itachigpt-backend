@@ -11,31 +11,28 @@ CORS(app)  # Adjust CORS settings as needed
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        body = request.get_json()
-        if not body or 'message' not in body:
+        data = request.get_json()
+        if not data or 'message' not in data:
             return jsonify({'response': 'No message provided!'}), 400
         
-        user_message = body['message']
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        user_message = data['message']
+        # Assume this is your model generating a response
+        response = model.generate_content(user_message)
         
-        # Safety settings
-        safety_settings = {
-            'HARM_CATEGORY_HARASSMENT': 'BLOCK_ONLY_HIGH',
-            'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_ONLY_HIGH',
-            'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_ONLY_HIGH',
-            'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_ONLY_HIGH',
-        }
-        
-        # Generate text response
-        response = model.generate_content(
-            user_message,
-            safety_settings=safety_settings
-        )
-        
-        return jsonify({'response': response.text})
+        # Determine the response type
+        if hasattr(response, 'text'):
+            return jsonify({'type': 'text', 'content': response.text})
+        elif hasattr(response, 'image_url'):
+            return jsonify({'type': 'image', 'content': response.image_url})
+        else:
+            return jsonify({'type': 'unknown', 'content': str(response)})
     
     except Exception as e:
         return jsonify({'response': f'Error: {str(e)}'}), 500
