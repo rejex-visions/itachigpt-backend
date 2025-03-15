@@ -19,15 +19,20 @@ def chat():
     try:
         body = request.get_json()
         if body is None:
-            return jsonify({'response': 'No JSON data provided!'}), 400
+            return jsonify({'type': 'error', 'content': 'No JSON data provided!'}), 400
         user_message = body.get('message', '')
         if not user_message:
-            return jsonify({'response': 'Please send a message!'}), 400
+            return jsonify({'type': 'error', 'content': 'Please send a message!'}), 400
         model = genai.GenerativeModel('gemini-2.0-flash-exp')
         response = model.generate_content(user_message)
-        return jsonify({'response': response.text})
+        if hasattr(response, 'text'):
+            return jsonify({'type': 'text', 'content': response.text})
+        elif hasattr(response, 'image_url'):  # Adjust this attribute based on actual response structure
+            return jsonify({'type': 'image', 'content': response.image_url})
+        else:
+            return jsonify({'type': 'error', 'content': 'Unknown response type'}), 500
     except Exception as e:
-        return jsonify({'response': f'Error: {str(e)}'}), 500
+        return jsonify({'type': 'error', 'content': f'Error: {str(e)}'}), 500
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
